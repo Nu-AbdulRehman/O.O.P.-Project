@@ -1,8 +1,16 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <string>
 using namespace std;
 using namespace sf;
+
+
+bool checkCollision(const Sprite& sprite1, const Sprite& sprite2)
+{
+    return sprite1.getGlobalBounds().contains(sprite2.getPosition().x, sprite2.getPosition().y);
+}
 
 class Pet{
     private:
@@ -57,6 +65,22 @@ class Pet{
             return trainingPoints;
         }
 
+        virtual void setHp(int hp)
+        {
+            Health = hp;
+        }
+        virtual void setAtk(int Atk)
+        {
+            Attack = Atk;
+        }
+        virtual void setSpd(int Spd)
+        {
+            Speed = Spd;
+        }
+        virtual void setDef(int def)
+        {
+            Defense = def;
+        }
         virtual void setTrainingPoints(int tp)
         {
             trainingPoints = tp;
@@ -442,6 +466,30 @@ class Shop: public Places{
         }
 };
 
+class Obstacle{
+    private:
+        string type;
+        int damage;
+        bool isDestroyed;
+        Vector2f position;
+    public:
+        Obstacle(string typ, int dmg, bool isDestroy, Vector2f pos)
+        {
+            type = typ;
+            damage = dmg;
+            isDestroyed = isDestroy;
+            position = pos;
+        }
+        void DamagePet(Pet& pet)
+        {
+
+        }
+        void Destroy()
+        {
+
+        }
+};
+
 class TrainingCamp{
     protected:
         int trainingIndex;
@@ -461,24 +509,22 @@ class TrainingCamp{
 class ObstacleCourse: public TrainingCamp{
     private:
         int numOfObstacles;
+        Obstacle obstacle;
     public:
-        ObstacleCourse(int numOfObs, int tI, int tm, string sub = "NULL", int tp = 0):TrainingCamp(tI, tm, sub, tp)
+        ObstacleCourse(int numOfObs, int tI, int tm, string sub = "NULL", int tp = 0, string typ = "Hit", int dmg = 20, bool isDestroy = false, Vector2f pos = Vector2f(0, 0)):TrainingCamp(tI, tm, sub, tp), obstacle(typ, dmg, isDestroy, pos)
         {
-
+            numOfObstacles = numOfObs;
         }
-        void Train(Pet*& pet, RenderWindow &window)
+        void TrainingLost(RenderWindow &window)
         {
-
             Font font;
             font.loadFromFile("Gloomie Saturday.otf");
 
-            string title = "Magical Pets Kingdom";
+            string title = "Training Failed!";
             Text Title(title, font, 42); 
             FloatRect titleBounds = Title.getLocalBounds();
             Title.setOrigin(titleBounds.width/2, titleBounds.height/2);
-            Title.setPosition(640, 50);
-
-            pet->setTrainingPoints(pet->getTrainingPoints() + trainingPoints);
+            Title.setPosition(640, 360);
 
             Sprite backButton;
             Texture backTexture;
@@ -493,7 +539,118 @@ class ObstacleCourse: public TrainingCamp{
             Sprite backgroundSprite;
             backgroundSprite.setTexture(backgroundTexture);
 
+            while(window.isOpen())
+            {
+                Event event;
+                while(window.pollEvent(event))
+                {
+                    if(event.type  == Event::Closed)
+                    {
+                        window.close();
+                    }
+                    if(event.type == Event::MouseButtonPressed && event.mouseButton.button == Mouse::Left)
+                    {
+                        Vector2i mousePosition = Mouse::getPosition(window);
+
+                        FloatRect buttonBounds[5];
+
+                        FloatRect backButtonBounds;
+                        backButtonBounds = backButton.getGlobalBounds();
+                        if(backButtonBounds.contains(mousePosition.x, mousePosition.y))
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                window.clear();
+                window.draw(backgroundSprite);
+                window.draw(Title);
+                window.draw(backButton);
+
+                window.display();
+            }
+        }
+        void TrainingWin(Pet*& pet, RenderWindow &window)
+        {
+            pet->setTrainingPoints(pet->getTrainingPoints() + trainingPoints);
+
+            Font font;
+            font.loadFromFile("Gloomie Saturday.otf");
+
+            string title = "Training Completed!";
+            Text Title(title, font, 42); 
+            FloatRect titleBounds = Title.getLocalBounds();
+            Title.setOrigin(titleBounds.width/2, titleBounds.height/2);
+            Title.setPosition(640, 360);
+
+            Sprite backButton;
+            Texture backTexture;
+            backTexture.loadFromFile("tile052.png");
+            backButton.setTexture(backTexture);
+            backButton.setPosition(50, 50);
+            backButton.setScale(3,3);
+
+            Texture backgroundTexture;
+            backgroundTexture.loadFromFile("trainingArena.jpg");
+
+            Sprite backgroundSprite;
+            backgroundSprite.setTexture(backgroundTexture);
+
+            while(window.isOpen())
+            {
+                Event event;
+                while(window.pollEvent(event))
+                {
+                    if(event.type  == Event::Closed)
+                    {
+                        window.close();
+                    }
+                    if(event.type == Event::MouseButtonPressed && event.mouseButton.button == Mouse::Left)
+                    {
+                        Vector2i mousePosition = Mouse::getPosition(window);
+
+                        FloatRect buttonBounds[5];
+
+                        FloatRect backButtonBounds;
+                        backButtonBounds = backButton.getGlobalBounds();
+                        if(backButtonBounds.contains(mousePosition.x, mousePosition.y))
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                window.clear();
+                window.draw(backgroundSprite);
+                window.draw(Title);
+                window.draw(backButton);
+
+                window.display();
+            }
+        }
+        void Train(Pet*& pet, RenderWindow &window)
+        {
+            Font font;
+            font.loadFromFile("Gloomie Saturday.otf");
+
+            Sprite backButton;
+            Texture backTexture;
+            backTexture.loadFromFile("tile052.png");
+            backButton.setTexture(backTexture);
+            backButton.setPosition(50, 50);
+            backButton.setScale(3,3);
+
+            Texture backgroundTexture;
+            backgroundTexture.loadFromFile("trainingArena.jpg");
+
+            Sprite backgroundSprite;
+            backgroundSprite.setTexture(backgroundTexture);
+
+            srand(time);
+
             Clock clock;
+            Clock clock2;
             float frameTime = 0.1f;
 
             Sprite petSprite;
@@ -516,11 +673,64 @@ class ObstacleCourse: public TrainingCamp{
                 petT.loadFromFile("Griffin1.png");
             }
 
+            string timer = "0000";
+            Text Timer(timer, font, 42); 
+            FloatRect titleBounds = Timer.getLocalBounds();
+            Timer.setOrigin(titleBounds.width/2, titleBounds.height/2);
+            Timer.setPosition(640, 50);
+
             petSprite.setTexture(petT);
+            petSprite.setPosition(640, 360);
+
+            int timeMin = time - 1;
+
+            int spawnTime = 3;
+
+            bool isSpawning = false;
+
+            Sprite obsS[numOfObstacles];
+            Texture obsT;
+            Vector2f spawnPoints[numOfObstacles];
+
+            for(int i = 0; i < numOfObstacles; i++)
+            {
+                spawnPoints[i].x = 100*i;
+                spawnPoints[i].y = -10;
+            }
+
+            obsT.loadFromFile("barrel.png");
+            for(int i = 0; i < numOfObstacles; i++)
+            {
+                obsS[i].setTexture(obsT);
+                obsS[i].setScale(0.1, 0.1);
+                obsS[i].setPosition(spawnPoints[i]);
+            }
+
+            int currentObs[numOfObstacles];
+            int tempTime ;
 
             while(window.isOpen())
             {
-                float elapsedTime = clock.getElapsedTime().asSeconds();
+                int timeSec = time*60 - clock.getElapsedTime().asSeconds();
+                timeSec = timeSec%60;
+                if(timeSec == 0 && timeMin == 1)
+                {
+                    timeMin--;
+                }
+                timer = to_string(timeMin) + ":" + to_string(timeSec);
+                Timer.setString(timer);   
+                
+                tempTime = spawnTime - clock2.getElapsedTime().asSeconds();
+                if(tempTime <= 0)
+                {
+                    tempTime = spawnTime;
+                    isSpawning = true;
+                    for(int i = 0; i < numOfObstacles; i++)
+                    {
+                        currentObs[i] = rand()%4;
+                    }
+                    clock2.restart();
+                }
 
                 Event event;
                 while(window.pollEvent(event))
@@ -544,28 +754,71 @@ class ObstacleCourse: public TrainingCamp{
                     }
                 }
 
-                if(Keyboard::isKeyPressed(Keyboard::D))
+                if(Keyboard::isKeyPressed(Keyboard::D) && petSprite.getPosition().x < 1200)
                 {
                     petSprite.move(0.1*pet->getSpd(), 0);
                 }
-                if(Keyboard::isKeyPressed(Keyboard::A))
+                if(Keyboard::isKeyPressed(Keyboard::A)&& petSprite.getPosition().x > 0)
                 {
                     petSprite.move(-0.1*pet->getSpd(), 0);
                 }
-                if(Keyboard::isKeyPressed(Keyboard::S))
+                if(Keyboard::isKeyPressed(Keyboard::S) && petSprite.getPosition().y < 640)
                 {
                     petSprite.move(0, 0.1*pet->getSpd());
                 }
-                if(Keyboard::isKeyPressed(Keyboard::W))
+                if(Keyboard::isKeyPressed(Keyboard::W) && petSprite.getPosition().y > 0)
                 {
                     petSprite.move(0, -0.1*pet->getSpd());
+                }
+                
+
+                for(int i = 0; i < numOfObstacles; i++)
+                {
+                    obsS[i].setPosition(obsS[i].getPosition().x, obsS[i].getPosition().y + 0.5);
+                    if(currentObs[i] == 1)
+                    {
+                        if(checkCollision(petSprite, obsS[i]))
+                        {
+                            TrainingLost(window);
+                        }
+                    }
+                }
+
+                if(time*60 - clock.getElapsedTime().asSeconds() <= 0)
+                {
+                    TrainingWin(pet, window);
+                    return;
                 }
 
                 window.clear();
                 window.draw(backgroundSprite);
-                window.draw(Title);
+                window.draw(Timer);
                 window.draw(backButton);
                 window.draw(petSprite);
+
+                if(isSpawning)
+                {
+                    for(int i = 0; i < numOfObstacles; i++)
+                    {
+                        if(currentObs[i] == 1)
+                        {
+                            obsS[i].setPosition(spawnPoints[i]);
+                            window.draw(obsS[i]);  
+                            isSpawning = false; 
+                        }
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < numOfObstacles; i++)
+                    {
+                        if(currentObs[i] == 1)
+                        {
+                            window.draw(obsS[i]);   
+                        }
+                    }
+                }
+
                 window.display();
             }
         }
@@ -634,7 +887,7 @@ class Player: public Character{
         Shop shop;
         ObstacleCourse tCamp1;
     public:
-        Player(string pass = "NULL", string uid = "NULL", string Name = "NULL", Pet **petptr = nullptr, int NumOfPets = 0, int tI = 0, int tm = 2, string sub = "Training Camp", int tp = 2, int numOfObs = 5):Character(uid, Name, petptr, NumOfPets), tCamp1(numOfObs,tI, tm, sub, tp)
+        Player(string pass = "NULL", string uid = "NULL", string Name = "NULL", Pet **petptr = nullptr, int NumOfPets = 0, int tI = 0, int tm = 1, string sub = "Training Camp", int tp = 2, int numOfObs = 20):Character(uid, Name, petptr, NumOfPets), tCamp1(numOfObs,tI, tm, sub, tp)
         {
             itemsList[0] = new HealthPotion("Health", 20);
             itemsList[1] = new ManaPotion("Mana", 20);
@@ -839,10 +1092,10 @@ class IO{
         Title.setPosition(640, 50);
 
         string subtitle = "Choose the Pet You want to Train";
-        Text subTitle(subtitle, font, 36); 
+        Text subTitle(subtitle, font, 24); 
         FloatRect subtitleBounds = subTitle.getLocalBounds();
         subTitle.setOrigin(subtitleBounds.width/2, subtitleBounds.height/2);
-        subTitle.setPosition(640, 250);
+        subTitle.setPosition(640, 100);
 
         Sprite backButton;
         Texture backTexture;
@@ -852,13 +1105,25 @@ class IO{
         backButton.setScale(3,3);
 
         Sprite monster[4];
+        Sprite upgradeButtons[16];
+        Texture upgradebuttonT;
         Texture monsterT[4];
         Text monsterNames[4];
+        Text upgradeTexts[16];
 
         Text monsterHp[4];
         Text monsterAtk[4];
         Text monsterDef[4];
         Text monsterSpeed[4];
+        Text monsterTrainingPoints[4];
+
+        upgradebuttonT.loadFromFile("tile028.png");
+
+        for(int i = 0; i < 16; i++)
+        {
+            upgradeTexts[i].setFont(font);
+            upgradeTexts[i].setCharacterSize(12);
+        }
 
         for(int i = 0; i < player.getNumOfPets(); i++)
         {
@@ -877,10 +1142,23 @@ class IO{
             monsterDef[i].setCharacterSize(11);
             monsterSpeed[i].setCharacterSize(11);
 
-            monsterHp[i].setPosition(260 + 230*i, 460);
-            monsterAtk[i].setPosition(340 + 230*i, 460);
-            monsterDef[i].setPosition(260 + 230*i, 480);
-            monsterSpeed[i].setPosition(340 + 230*i, 480);
+            monsterHp[i].setPosition(235 + 230*i, 460);
+            monsterAtk[i].setPosition(315 + 230*i, 460);
+            monsterDef[i].setPosition(235 + 230*i, 480);
+            monsterSpeed[i].setPosition(315 + 230*i, 480);
+
+            upgradeTexts[0 + 4*i].setString("Health ");
+            upgradeTexts[1  + 4*i].setString("Attack ");
+            upgradeTexts[2  + 4*i].setString("Defense");
+            upgradeTexts[3  + 4*i].setString("Speed  ");
+
+            monsterTrainingPoints[i].setString("Points: " + to_string(player.getPets()[i]->getTrainingPoints()));
+            for(int j = 0; j < 4; j++)
+            {
+                upgradeButtons[j + 4*i].setTexture(upgradebuttonT);
+                upgradeButtons[j + 4*i].setPosition(350 + 230*i, 540 + 20*j);
+                upgradeTexts[j + 4*i].setPosition(220 + 230*i, 540 + 20*j);
+            }
         }
 
         for(int i = 0; i < 4; i++)
@@ -896,18 +1174,22 @@ class IO{
                 if(player.getPets()[i][0].getName() == "Dragon")
                 {
                     monsterT[i].loadFromFile("tile006.png");
+                    monster[i].setScale(1.1, 1.1);
                 }
                 else if(player.getPets()[i][0].getName() == "Unicorn")
                 {
                     monsterT[i].loadFromFile("Unicorn1.png");
+                    monster[i].setScale(1.75, 1.75);
                 }
                 else if(player.getPets()[i][0].getName() == "Griffin")
                 {
                     monsterT[i].loadFromFile("Griffin1.png");
+                    monster[i].setScale(2.3, 2.3);
                 }
                 else if(player.getPets()[i][0].getName() == "Pheonix")
                 {
                     monsterT[i].loadFromFile("pheonix1.png");
+                    monster[i].setScale(2.6, 2.6);
                 }
             }
         }
@@ -921,20 +1203,19 @@ class IO{
             monsterNames[i].setOrigin(bounds.width/2, bounds.height/2);
             monsterNames[i].setFont(font);
             monsterNames[i].setCharacterSize(24);
-            monsterNames[i].setPosition(280 + 230*i, 415);
+            monsterNames[i].setPosition(255 + 230*i, 415);
+
+            bounds = monsterTrainingPoints[i].getGlobalBounds();
+            monsterTrainingPoints[i].setOrigin(bounds.width/2, bounds.height/2);
+            monsterTrainingPoints[i].setFont(font);
+            monsterTrainingPoints[i].setCharacterSize(12);
+            monsterTrainingPoints[i].setPosition(265 + 230*i, 500);
         }
 
-        monster[1].setScale(1.75, 1.75);
-        monster[1].setPosition(475,250);
-
-        monster[0].setScale(1.1, 1.1);
-        monster[0].setPosition(220,250);
-
-        monster[2].setScale(2.3, 2.3);
-        monster[2].setPosition(725,275);
-
-        monster[3].setScale(2.6, 2.6);
-        monster[3].setPosition(975,275);
+        monster[0].setPosition(200,250);
+        monster[1].setPosition(455,250);
+        monster[2].setPosition(705,250);
+        monster[3].setPosition(955,250);
 
 
         Sprite buttonS[5];
@@ -943,7 +1224,7 @@ class IO{
         {
             buttonT[i].loadFromFile("MonsterHolder.png");
             buttonS[i].setTexture(buttonT[i]);
-            buttonS[i].setPosition(150 + 230*i, 160);
+            buttonS[i].setPosition(120 + 230*i, 160);
             buttonS[i].setScale(1, 1);
         }
 
@@ -1005,6 +1286,44 @@ class IO{
                         } 
                     }
 
+                    FloatRect upgradeButtonBounds[16];
+
+                    for(int i = 0; i < 16; i++)
+                    {
+                        upgradeButtonBounds[i] = upgradeButtons[i].getGlobalBounds();
+                    }
+
+                    for(int i = 0; i < player.getNumOfPets(); i++)
+                    {
+                        if(player.getPets()[i]->getTrainingPoints() > 0)
+                        {
+                            if(upgradeButtonBounds[0 + 4*i].contains(mousePosition.x, mousePosition.y))
+                             {
+                                player.getPets()[i]->setHp(player.getPets()[i]->getHp() + 5);
+                                player.getPets()[i]->setTrainingPoints(player.getPets()[i]->getTrainingPoints() - 1);
+                                break;
+                            }
+                            else if(upgradeButtonBounds[1 + 4*i].contains(mousePosition.x, mousePosition.y))
+                            {
+                                player.getPets()[i]->setAtk(player.getPets()[i]->getAtk() + 5);
+                                player.getPets()[i]->setTrainingPoints(player.getPets()[i]->getTrainingPoints() - 1);
+                                break;
+                            }
+                            else if(upgradeButtonBounds[2 + 4*i].contains(mousePosition.x, mousePosition.y))
+                            {
+                                player.getPets()[i]->setDef(player.getPets()[i]->getDef() + 5);
+                                player.getPets()[i]->setTrainingPoints(player.getPets()[i]->getTrainingPoints() - 1);
+                                break;
+                            }
+                            else if(upgradeButtonBounds[3 + 4*i].contains(mousePosition.x, mousePosition.y))
+                            {
+                                player.getPets()[i]->setSpd(player.getPets()[i]->getSpd() + 5);
+                                player.getPets()[i]->setTrainingPoints(player.getPets()[i]->getTrainingPoints() - 1);
+                                break;
+                            }
+                        }
+                    }
+
                     FloatRect backButtonBounds;
                     backButtonBounds = backButton.getGlobalBounds();
                     if(backButtonBounds.contains(mousePosition.x, mousePosition.y))
@@ -1014,10 +1333,24 @@ class IO{
                 }
             }
 
+            for(int i = 0; i < player.getNumOfPets(); i++)
+            {
+                monsterHp[i].setString("Health: " + to_string(player.getPets()[i]->getHp()));
+                monsterAtk[i].setString("Attack: " + to_string(player.getPets()[i]->getAtk()));
+                monsterDef[i].setString("Defense: " + to_string(player.getPets()[i]->getDef()));
+                monsterSpeed[i].setString("Speed: " + to_string(player.getPets()[i]->getSpd()));
+                monsterTrainingPoints[i].setString("Points: " + to_string(player.getPets()[i][0].getTrainingPoints()));
+                for(int j = 0; j < 4; j++)
+                {
+                    upgradeButtons[j + 4*i].setTexture(upgradebuttonT);
+                }
+            }
+
             window.clear();
             window.draw(backgroundSprite);
             window.draw(Title);
-            for(int i = 0; i < 4; i++)
+            window.draw(subTitle);
+            for(int i = 0; i < player.getNumOfPets(); i++)
             {
                 window.draw(buttonS[i]);
                 window.draw(monster[i]);
@@ -1026,6 +1359,15 @@ class IO{
                 window.draw(monsterAtk[i]);
                 window.draw(monsterDef[i]);
                 window.draw(monsterSpeed[i]);
+                window.draw(monsterTrainingPoints[i]);
+                if(player.getPets()[i]->getTrainingPoints() > 0)
+                {
+                    for(int j = 0; j < 4; j++)
+                    {
+                        window.draw(upgradeButtons[j + 4*i]);
+                        window.draw(upgradeTexts[j + 4*i]);
+                    }
+                }
             }
             window.draw(backButton);
             window.display();
@@ -1122,11 +1464,11 @@ class IO{
             monsterNames[i].setPosition(280 + 230*i, 415);
         }
 
-        monster[1].setScale(1.75, 1.75);
-        monster[1].setPosition(475,250);
-
         monster[0].setScale(1.1, 1.1);
         monster[0].setPosition(220,250);
+
+        monster[1].setScale(1.75, 1.75);
+        monster[1].setPosition(475,250);
 
         monster[2].setScale(2.3, 2.3);
         monster[2].setPosition(725,275);
@@ -1172,26 +1514,26 @@ class IO{
                 if(player.getPets()[i][0].getName() == "Dragon")
                 {
                     playerPetsT[i].loadFromFile("tile006.png");
+                    playerPetsS[i].setScale(0.6, 0.6);
                 }
                 else if(player.getPets()[i][0].getName() == "Unicorn")
                 {
                     playerPetsT[i].loadFromFile("Unicorn1.png");
+                    playerPetsS[i].setScale(0.875, 0.875);
                 }
                 else if(player.getPets()[i][0].getName() == "Griffin")
                 {
                     playerPetsT[i].loadFromFile("Griffin1.png");
+                    playerPetsS[i].setScale(1.15, 1.15);
                 }
                 else if(player.getPets()[i][0].getName() == "Pheonix")
                 {
                     playerPetsT[i].loadFromFile("pheonix1.png");
+                    playerPetsS[i].setScale(1.3, 1.3);
                 }
+                playerPetsS[i].setTexture(playerPetsT[i]);
+                playerPetsS[i].setPosition(50, 170 + 100*i);
             }
-        }
-
-        for(int i = 0; i < player.getNumOfPets(); i++)
-        {
-            playerPetsS[i].setTexture(playerPetsT[i]);
-            playerPetsS[i].setPosition(50, 170 + 100*i);
         }
 
 
@@ -1241,28 +1583,30 @@ class IO{
                     if(player.getPets()[i][0].getName() == "Dragon")
                     {
                         playerPetsT[i].loadFromFile("tile006.png");
+                        playerPetsS[i].setScale(0.6, 0.6);
+                        playerPetsS[i].setPosition(50, 200 + 100*i);
                     }
                     else if(player.getPets()[i][0].getName() == "Unicorn")
                     {
                         playerPetsT[i].loadFromFile("Unicorn1.png");
+                        playerPetsS[i].setScale(0.875, 0.875);
+                        playerPetsS[i].setPosition(70, 200 + 100*i);
                     }
                     else if(player.getPets()[i][0].getName() == "Griffin")
                     {
                         playerPetsT[i].loadFromFile("Griffin1.png");
+                        playerPetsS[i].setScale(1.15, 1.15);
+                        playerPetsS[i].setPosition(70, 200 + 100*i);
                     }
                     else if(player.getPets()[i][0].getName() == "Pheonix")
                     {
                         playerPetsT[i].loadFromFile("pheonix1.png");
+                        playerPetsS[i].setScale(1.6, 1.6);
+                        playerPetsS[i].setPosition(90, 200 + 100*i);
                     }
+                    playerPetsS[i].setTexture(playerPetsT[i]);
                 }
-            }
-    
-            for(int i = 0; i < player.getNumOfPets(); i++)
-            {
-                playerPetsS[i].setTexture(playerPetsT[i]);
-                playerPetsS[i].setPosition(50, 170 + 100*i);
-            }
-
+            }   
             Event event;
             while(window.pollEvent(event))
             {
@@ -1281,23 +1625,23 @@ class IO{
                     }
                     if(buttonBounds[0].contains(mousePosition.x, mousePosition.y))
                     {
-                        player.AdoptPet(petptr[0]); 
-                        cout << "Button 1" << endl;  
+                        Pet* ptr = new Dragon();
+                        player.AdoptPet(ptr);  
                     }
                     else if(buttonBounds[1].contains(mousePosition.x, mousePosition.y))
                     {
-                        player.AdoptPet(petptr[1]);   
-                        cout << "Button 2" << endl;  
+                        Pet* ptr = new Unicorn();
+                        player.AdoptPet(ptr);    
                     }
                     else if(buttonBounds[2].contains(mousePosition.x, mousePosition.y))
                     {
-                        player.AdoptPet(petptr[2]);
-                        cout << "Button 3" << endl;  
+                        Pet* ptr = new Griffin();
+                        player.AdoptPet(ptr);
                     }
                     else if(buttonBounds[3].contains(mousePosition.x, mousePosition.y))
                     {
-                        player.AdoptPet(petptr[3]);
-                        cout << "Button 4" << endl;  
+                        Pet* ptr = new Pheonix();
+                        player.AdoptPet(ptr);
                     }
 
                     FloatRect backButtonBounds;
@@ -1605,7 +1949,7 @@ class MainMenu{
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(1280, 720), "Magical Pets Kingdom");
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Magical Pets Kingdom", sf::Style::Titlebar | sf::Style::Close);
 
     IO inputOutput;
     MainMenu mainmenu("MainMenu");
