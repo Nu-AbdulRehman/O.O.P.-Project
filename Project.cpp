@@ -1117,38 +1117,47 @@ class Character{
 
 class Bot: public Character{
     public:
-        Bot(string uid = 0, string Name = "NULL", Pet **petptr = nullptr, int NumOfPets = 0):Character(uid, Name, petptr, NumOfPets)
+        Bot(string uid = "NULL", string Name = "NULL", int NumOfPets = 0):Character(uid, Name, createPets(NumOfPets), NumOfPets)
+        {
+            
+        }
+        static Pet** createPets(int num)
         {
             int randIndex = 0;
-            petptr = new Pet*[NumOfPets];
-            for(int i = 0; i < NumOfPets; i++)
+            Pet** petPtr = new Pet*[num];
+            for(int i = 0; i < num; i++)
             {
                 randIndex = rand()%4;
                 if(randIndex == 0)
                 {
-                    petptr[i] = new Dragon();
+                    petPtr[i] = new Dragon();
                 }
                 else if(randIndex == 1)
                 {
-                    petptr[i] = new Griffin();
+                    petPtr[i] = new Griffin();
                 }
                 else if(randIndex == 2)
                 {
-                    petptr[i] = new Pheonix();
+                    petPtr[i] = new Pheonix();
                 }
                 else if(randIndex == 3)
                 {
-                    petptr[i] = new Unicorn();
+                    petPtr[i] = new Unicorn();
                 }
             }
+            return petPtr;
+        }
+        Pet**& getPets()
+        {
+            return pets;
         }
 };
 
 class oneVone:public ArenaBattle{
     private:
-        Bot bot;
+    Bot bot;
     public:
-        oneVone(int wP = 5, string name = "1v1", int tym = 2.5, int numOfObs = 15, int buffTym = 0.15, string uID = "Bot-1", string naem = "Bot", Pet **ptr = nullptr, int numOfPets = 1):ArenaBattle(wP, name, tym, numOfObs, buffTym), bot(uID, naem, ptr, numOfPets)
+        oneVone(int wP = 5, string name = "1v1", int tym = 2.5, int numOfObs = 15, int buffTym = 0.15, string uID = "Bot-1", string naem = "Bot", int numOfPets = 1):ArenaBattle(wP, name, tym, numOfObs, buffTym), bot(uID, naem, numOfPets)
         {
 
         }
@@ -1164,9 +1173,14 @@ class oneVone:public ArenaBattle{
             backButton.setPosition(50, 50);
             backButton.setScale(3,3);
 
+            Pet* botPet;
+
+            botPet = bot.getPets()[0];
+
             Sprite statBg;
             Texture statBgT;
             Text petStats[5];
+            Text botPetStats[5];
 
             petStats[0].setString(pet->getName());
             petStats[1].setString("Health: " + to_string(pet->getHp()));
@@ -1174,11 +1188,22 @@ class oneVone:public ArenaBattle{
             petStats[3].setString("Attack: " + to_string(pet->getAtk()));
             petStats[4].setString("Speed: " + to_string(pet->getSpd()));
 
+            botPetStats[0].setString(botPet->getName());
+            botPetStats[1].setString("Health: " + to_string(botPet->getHp()));
+            botPetStats[2].setString("Defense: " + to_string(botPet->getDef()));
+            botPetStats[3].setString("Attack: " + to_string(botPet->getAtk()));
+            botPetStats[4].setString("Speed: " + to_string(botPet->getSpd()));
+
+
             for(int i = 0; i < 5; i++)
             {
-                petStats[i].setPosition(20, 150 + 15*i);
+                petStats[i].setPosition(20, 250 + 15*i);
                 petStats[i].setFont(font);
                 petStats[i].setCharacterSize(16);
+
+                botPetStats[i].setPosition(1100, 250 + 15*i);
+                botPetStats[i].setFont(font);
+                botPetStats[i].setCharacterSize(16);
             }
 
             Sprite inventorybg[5];
@@ -1222,8 +1247,11 @@ class oneVone:public ArenaBattle{
             bool buffEnabled = false;
             string buffType;
 
+ 
             Sprite petSprite;
+            Sprite botpetSprite;
             Texture petT;
+            Texture botpetT;
             
             if(pet->getName() == "Dragon")
             {
@@ -1250,6 +1278,31 @@ class oneVone:public ArenaBattle{
                 petSprite.setTextureRect(IntRect(0, 0, 106.25, 83));
             }
 
+            if(botPet->getName() == "Dragon")
+            {
+                botpetT.loadFromFile("DragonFly.png");
+                botpetSprite.setTexture(botpetT);
+                botpetSprite.setTextureRect(IntRect(0, 0, 191, 126));
+            }
+            else if(botPet->getName() == "Pheonix")
+            {
+                botpetT.loadFromFile("PheonixFly.png");
+                botpetSprite.setTexture(botpetT);
+                botpetSprite.setTextureRect(IntRect(0, 0, 81.67, 71));
+            }
+            else if(botPet->getName() == "Unicorn")
+            {
+                botpetT.loadFromFile("UnicornRun.png");
+                botpetSprite.setTexture(botpetT);
+                botpetSprite.setTextureRect(IntRect(0, 0, 122.67, 72));
+            }
+            else if(botPet->getName() == "Griffin")
+            {
+                botpetT.loadFromFile("GriffinRun.png");
+                botpetSprite.setTexture(botpetT);
+                botpetSprite.setTextureRect(IntRect(0, 0, 106.25, 83));
+            }
+
             string timer = "0000";
             Text Timer(timer, font, 42); 
             FloatRect titleBounds = Timer.getLocalBounds();
@@ -1257,6 +1310,7 @@ class oneVone:public ArenaBattle{
             Timer.setPosition(640, 50);
 
             petSprite.setPosition(640, 360);
+            botpetSprite.setPosition(1100, 360);
 
             int timeMin = time - 1;
 
@@ -1290,6 +1344,7 @@ class oneVone:public ArenaBattle{
 
 
             int dragonIndex = 0, griffinIndex = 0, pheonixIndex = 0, unicornIndex = 0;
+            int botdragonIndex = 0, botgriffinIndex = 0, botpheonixIndex = 0, botunicornIndex = 0;
 
             Item *items[5];
 
@@ -1326,6 +1381,44 @@ class oneVone:public ArenaBattle{
 
                 if(elapsedTime >= frameTime)
                 {
+
+                    if(botPet->getName() == "Dragon")
+                    {
+                        botpetSprite.setTextureRect(IntRect(191*botdragonIndex, 0, 191, 126));
+                        botdragonIndex++;
+                        if(botdragonIndex == 2)
+                        {
+                            botdragonIndex = 0;
+                        }
+                    }
+                    else if(botPet->getName() == "Pheonix")
+                    {
+                        botpetSprite.setTextureRect(IntRect(81.67*botpheonixIndex, 0, 81.67, 71));
+                        botpheonixIndex++;
+                        if(botpheonixIndex == 8)
+                        {
+                            botpheonixIndex = 0;
+                        }
+                    }
+                    else if(botPet->getName() == "Unicorn")
+                    {
+                        botpetSprite.setTextureRect(IntRect(122.67*botgriffinIndex, 0, 122.67, 72));
+                        botgriffinIndex++;
+                        if(botgriffinIndex == 5)
+                        {
+                            botgriffinIndex = 0;
+                        }
+                    }
+                    else if(botPet->getName() == "Griffin")
+                    {
+                        botpetSprite.setTextureRect(IntRect(100.25*botunicornIndex, 0, 106.25, 83));
+                        botunicornIndex++;
+                        if(botunicornIndex == 7)
+                        {
+                            botunicornIndex = 0;
+                        }
+                    }
+
                     if(pet->getName() == "Dragon")
                     {
                         petSprite.setTextureRect(IntRect(191*dragonIndex, 0, 191, 126));
@@ -1361,7 +1454,8 @@ class oneVone:public ArenaBattle{
                         {
                             unicornIndex = 0;
                         }
-                    }                   
+                    }
+        
                     animsClock.restart();
                 }
 
@@ -1514,10 +1608,12 @@ class oneVone:public ArenaBattle{
                 window.draw(Timer);
                 window.draw(backButton);
                 window.draw(petSprite);
+                window.draw(botpetSprite);
 
                 for(int i = 0; i < 5; i++)
                 {
                     window.draw(petStats[i]);
+                    window.draw(botPetStats[i]);
                     window.draw(inventorybg[i]);
                     window.draw(inventory[i]);
                     InventoryItems[i].setString(to_string(playerItems[i]));
