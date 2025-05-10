@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <cmath>
 using namespace std;
 using namespace sf;
 
@@ -1127,6 +1128,7 @@ class Bot: public Character{
             Pet** petPtr = new Pet*[num];
             for(int i = 0; i < num; i++)
             {
+                srand(time(0));
                 randIndex = rand()%4;
                 if(randIndex == 0)
                 {
@@ -1150,6 +1152,20 @@ class Bot: public Character{
         Pet**& getPets()
         {
             return pets;
+        }
+        float calculateDistance(Vector2f pos1, Vector2f pos2)
+        {
+            float dist;
+            dist = pow((pos2.x - pos1.x), 2) + pow((pos2.y - pos1.y), 2);
+            dist = pow(dist, 0.5);
+            return dist; 
+        }
+        Vector2f calculateMoveDir(Vector2f pos1, Vector2f pos2)
+        {
+            Vector2f temp;
+            temp.x = pos2.x - pos1.x;
+            temp.y = pos2.y - pos1.y;
+            return temp;
         }
 };
 
@@ -1269,7 +1285,7 @@ class oneVone:public ArenaBattle{
             {
                 petT.loadFromFile("UnicornRun.png");
                 petSprite.setTexture(petT);
-                petSprite.setTextureRect(IntRect(0, 0, 122.67, 72));
+                petSprite.setTextureRect(IntRect(0, 0, 106.25, 83));
             }
             else if(pet->getName() == "Griffin")
             {
@@ -1294,7 +1310,7 @@ class oneVone:public ArenaBattle{
             {
                 botpetT.loadFromFile("UnicornRun.png");
                 botpetSprite.setTexture(botpetT);
-                botpetSprite.setTextureRect(IntRect(0, 0, 122.67, 72));
+                botpetSprite.setTextureRect(IntRect(0, 0, 106.25, 83));
             }
             else if(botPet->getName() == "Griffin")
             {
@@ -1338,6 +1354,9 @@ class oneVone:public ArenaBattle{
 
             FloatRect petBounds = petSprite.getLocalBounds();
             petSprite.setOrigin(petBounds.width/2, petBounds.height/2);
+
+            petBounds = botpetSprite.getLocalBounds();
+            botpetSprite.setOrigin(petBounds.width/2, petBounds.height/2);
 
             int currentObs[numOfObstacles];
             int tempTime;
@@ -1402,20 +1421,20 @@ class oneVone:public ArenaBattle{
                     }
                     else if(botPet->getName() == "Unicorn")
                     {
-                        botpetSprite.setTextureRect(IntRect(122.67*botgriffinIndex, 0, 122.67, 72));
-                        botgriffinIndex++;
-                        if(botgriffinIndex == 5)
+                        botpetSprite.setTextureRect(IntRect(106.25*botunicornIndex, 0, 106.25, 83));
+                        botunicornIndex++;
+                        if(botunicornIndex == 5)
                         {
-                            botgriffinIndex = 0;
+                            botunicornIndex = 0;
                         }
                     }
                     else if(botPet->getName() == "Griffin")
                     {
-                        botpetSprite.setTextureRect(IntRect(100.25*botunicornIndex, 0, 106.25, 83));
-                        botunicornIndex++;
-                        if(botunicornIndex == 7)
+                        botpetSprite.setTextureRect(IntRect(122.67*botgriffinIndex, 0, 122.67, 72));
+                        botgriffinIndex++;
+                        if(botgriffinIndex == 7)
                         {
-                            botunicornIndex = 0;
+                            botgriffinIndex = 0;
                         }
                     }
 
@@ -1564,6 +1583,19 @@ class oneVone:public ArenaBattle{
                         petStats[4].setString("Speed: " + to_string(pet->getSpd()));
                     }
                 }  
+
+                if(bot.calculateDistance(botpetSprite.getPosition(), petSprite.getPosition()) > 250)
+                {
+                    botpetSprite.move(bot.calculateMoveDir(botpetSprite.getPosition(), petSprite.getPosition()).x*botPet->getSpd()*0.01, bot.calculateMoveDir(botpetSprite.getPosition(), petSprite.getPosition()).y*botPet->getSpd()*0.01);
+                    if(bot.calculateMoveDir(botpetSprite.getPosition(), petSprite.getPosition()).x > 0)
+                    {
+                        botpetSprite.setScale(1.0f, 1.0f);
+                    }
+                    else 
+                    {
+                        botpetSprite.setScale(-1.0f, 1.0f);
+                    }
+                }
 
                 if(Keyboard::isKeyPressed(Keyboard::D) && petSprite.getPosition().x < 1200)
                 {
